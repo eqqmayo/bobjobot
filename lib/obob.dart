@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-
 import 'package:html/dom.dart';
 import 'package:nyxx/nyxx.dart';
 import 'package:http/http.dart' as http;
@@ -10,12 +9,14 @@ class Obob {
   static const int maxImages = 10;
 
   final String token;
-  late final NyxxGateway bot;
   final List<int> channelIds;
   final Map<String, bool> _messageSentTracker = {};
 
+  late final NyxxGateway bot;
+  late Future<void> _initializationDone;
+
   Obob({required this.token, required this.channelIds}) {
-    _initializeBot();
+    _initializationDone = _initializeBot();
   }
 
   Future<void> _initializeBot() async {
@@ -26,20 +27,25 @@ class Obob {
   }
 
   Future<void> activateBot() async {
+    await _initializationDone;
+
     try {
       final iframeElement = await _getElements(url: blogUrl, tag: 'iframe');
 
       if (iframeElement != null) {
-        final src = iframeElement.attributes['src'];
+        final src = iframeElement[0].attributes['src'];
         final fullSrc = Uri.parse(blogUrl).resolve(src!).toString();
+
+        final imageElements =
+            await _getElements(url: fullSrc, tag: 'img', isAll: true);
         final dateElement =
             await _getElements(url: fullSrc, tag: 'h3.se_textarea');
 
-        if (dateElement != null) {
-          final dateText = dateElement.text.trim();
-          final images = await _getLunchImages(dateText, iframeElement);
+        if (imageElements != null && dateElement != null) {
+          final dateText = dateElement[0].text.trim();
+          final images = await _getLunchImages(dateText, imageElements);
 
-          if (images != null) {
+          if (images != null && images.isNotEmpty) {
             await _postImageToDiscord(images);
           }
         }
@@ -72,13 +78,12 @@ class Obob {
   }
 
   Future<List<Uint8List>?> _getLunchImages(
-      String dateText, Element element) async {
+      String dateText, List<Element> elements) async {
     if (_isToday(dateText)) {
       final todayKey = DateTime.now().toIso8601String().split('T')[0];
 
       if (_messageSentTracker[todayKey] != true) {
-        final imageUrls = element
-            .querySelectorAll('img')
+        final imageUrls = elements
             .map((img) => img.attributes['data-lazy-src'])
             .whereType<String>()
             .toList()
@@ -114,8 +119,8 @@ class Obob {
         int.parse(match[2]!) == today.day;
   }
 
-  Future<Element?> _getElements(
-      {required String url, required String tag}) async {
+  Future<List<Element>?> _getElements(
+      {required String url, required String tag, bool isAll = false}) async {
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode != 200) {
@@ -124,11 +129,17 @@ class Obob {
     }
 
     final document = parser.parse(response.body);
-    final element = document.querySelector(tag);
-
-    if (element == null) {
-      print('Cannot find $tag');
+    if (isAll) {
+      final elements = document.querySelectorAll(tag);
+      return elements.toList();
+    } else {
+      final element = document.querySelector(tag);
+      if (element != null) {
+        return [element];
+      } else {
+        print('Cannot find $tag');
+        return null;
+      }
     }
-    return element;
   }
 }
