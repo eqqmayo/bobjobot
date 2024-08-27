@@ -8,22 +8,26 @@ class Obob {
   static const String blogUrl = 'https://blog.naver.com/skfoodcompany';
   static const int maxImages = 10;
 
-  final String token;
-  final List<int> channelIds;
+  final String _token;
+  final List<int> _channelIds;
   final Map<String, bool> _messageSentTracker = {};
 
-  String get todayKey => DateTime.now().toIso8601String().split('T')[0];
+  String get _todayKey => DateTime.now().toIso8601String().split('T')[0];
 
-  late final NyxxGateway bot;
+  late final NyxxGateway _bot;
   late Future<void> _initializationDone;
 
-  Obob({required this.token, required this.channelIds}) {
+  Obob({
+    required String token,
+    required List<int> channelIds,
+  })  : _token = token,
+        _channelIds = channelIds {
     _initializationDone = _initializeBot();
   }
 
   Future<void> _initializeBot() async {
-    bot = await Nyxx.connectGateway(
-      token,
+    _bot = await Nyxx.connectGateway(
+      _token,
       GatewayIntents.allUnprivileged,
     );
   }
@@ -59,8 +63,8 @@ class Obob {
 
   Future<void> _postImageToDiscord(List<Uint8List> images) async {
     try {
-      final channels = await Future.wait(channelIds
-          .map((id) async => await bot.channels.fetch(Snowflake(id))));
+      final channels = await Future.wait(_channelIds
+          .map((id) async => await _bot.channels.fetch(Snowflake(id))));
 
       for (var channel in channels) {
         if (channel is GuildTextChannel) {
@@ -70,7 +74,8 @@ class Obob {
                     data: image,
                     fileName: 'lunchmenu_${images.indexOf(image)}.jpg'))
                 .toList());
-          _messageSentTracker[todayKey] = true;
+
+          _messageSentTracker[_todayKey] = true;
         } else {
           print('텍스트 채널이 아닙니다.');
         }
@@ -83,7 +88,7 @@ class Obob {
   Future<List<Uint8List>?> _getLunchImages(
       String dateText, List<Element> elements) async {
     if (_isToday(dateText)) {
-      if (_messageSentTracker[todayKey] != true) {
+      if (_messageSentTracker[_todayKey] != true) {
         final imageUrls = elements
             .map((img) => img.attributes['data-lazy-src'])
             .whereType<String>()
@@ -121,7 +126,6 @@ class Obob {
   Future<List<Element>?> _getElements(
       {required String url, required String tag, bool isAll = false}) async {
     final response = await http.get(Uri.parse(url));
-
     if (response.statusCode != 200) {
       print('Failed to load url: ${response.statusCode}');
       return null;
@@ -129,16 +133,14 @@ class Obob {
 
     final document = parser.parse(response.body);
     if (isAll) {
-      final elements = document.querySelectorAll(tag);
-      return elements.toList();
-    } else {
-      final element = document.querySelector(tag);
-      if (element != null) {
-        return [element];
-      } else {
-        print('Cannot find $tag');
-        return null;
-      }
+      return document.querySelectorAll(tag);
     }
+
+    final element = document.querySelector(tag);
+    if (element != null) {
+      return [element];
+    }
+    print('Cannot find $tag');
+    return null;
   }
 }
