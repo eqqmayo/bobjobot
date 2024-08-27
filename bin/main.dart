@@ -10,9 +10,8 @@ void main() async {
     throw Exception('토큰 찾을 수 없음');
   }
   final cron = Cron();
-  final obob = Obob(token: token, channelIds: [1277235797141098727]);
+  final obob = Obob(token: token, channelIds: [1230352884462260286]);
 
   cron.schedule(
-      Schedule.parse('*/5 21-22 * * 3,4,5'), () => obob.activateBot());
-  obob.activateBot();
+      Schedule.parse('*/5 11-12 * * 2,3,4,5'), () => obob.activateBot());
 }

@@ -12,6 +12,8 @@ class Obob {
   final List<int> channelIds;
   final Map<String, bool> _messageSentTracker = {};
 
+  String get todayKey => DateTime.now().toIso8601String().split('T')[0];
+
   late final NyxxGateway bot;
   late Future<void> _initializationDone;
 
@@ -68,6 +70,7 @@ class Obob {
                     data: image,
                     fileName: 'lunchmenu_${images.indexOf(image)}.jpg'))
                 .toList());
+          _messageSentTracker[todayKey] = true;
         } else {
           print('텍스트 채널이 아닙니다.');
         }
@@ -80,8 +83,6 @@ class Obob {
   Future<List<Uint8List>?> _getLunchImages(
       String dateText, List<Element> elements) async {
     if (_isToday(dateText)) {
-      final todayKey = DateTime.now().toIso8601String().split('T')[0];
-
       if (_messageSentTracker[todayKey] != true) {
         final imageUrls = elements
             .map((img) => img.attributes['data-lazy-src'])
@@ -99,8 +100,6 @@ class Obob {
             print('Failed to fetch image: $imageUrl');
           }
         }
-
-        _messageSentTracker[todayKey] = true;
         return images;
       } else {
         print('오늘은 이미 알림을 완료하였습니다.');
