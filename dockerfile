@@ -18,7 +18,8 @@ RUN dart compile exe bin/main.dart -o /app/bin/main
 FROM scratch
 
 # Copy the compiled executable from the build stage
-COPY --from=build /app/bin/main /app/bin/main
+COPY --from=build /runtime/ /
+COPY --from=build /app/bin/main /app/bin/
 
 # Expose the port the app runs on
 EXPOSE 8080

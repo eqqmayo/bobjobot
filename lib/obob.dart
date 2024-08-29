@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:html/dom.dart';
 import 'package:nyxx/nyxx.dart';
@@ -57,7 +58,7 @@ class Obob {
         }
       }
     } catch (e) {
-      print('Failed to activateBot: $e');
+      stderr.writeln('Failed to activateBot: $e');
     }
   }
 
@@ -77,11 +78,11 @@ class Obob {
 
           _messageSentTracker[_todayKey] = true;
         } else {
-          print('텍스트 채널이 아닙니다.');
+          stderr.writeln('텍스트 채널이 아닙니다.');
         }
       }
     } catch (e) {
-      print('이미지 전송 중 오류 발생: $e');
+      stderr.writeln('이미지 전송 중 오류 발생: $e');
     }
   }
 
@@ -102,12 +103,12 @@ class Obob {
           if (response.statusCode == 200) {
             images.add(response.bodyBytes);
           } else {
-            print('Failed to fetch image: $imageUrl');
+            stderr.writeln('Failed to fetch image: $imageUrl');
           }
         }
         return images;
       } else {
-        print('오늘은 이미 알림을 완료하였습니다.');
+        stderr.writeln('오늘은 이미 알림을 완료하였습니다.');
       }
     }
     return null;
@@ -127,20 +128,18 @@ class Obob {
       {required String url, required String tag, bool isAll = false}) async {
     final response = await http.get(Uri.parse(url));
     if (response.statusCode != 200) {
-      print('Failed to load url: ${response.statusCode}');
+      stderr.writeln('Failed to load url: ${response.statusCode}');
       return null;
     }
-
     final document = parser.parse(response.body);
     if (isAll) {
       return document.querySelectorAll(tag);
     }
-
     final element = document.querySelector(tag);
     if (element != null) {
       return [element];
     }
-    print('Cannot find $tag');
+    stderr.writeln('Cannot find $tag');
     return null;
   }
 }
