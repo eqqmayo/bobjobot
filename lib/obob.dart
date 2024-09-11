@@ -6,27 +6,33 @@ import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 import 'package:xml/xml.dart';
 import 'package:intl/intl.dart';
+import 'package:googleapis_auth/auth_io.dart';
+import 'package:googleapis/datastore/v1.dart';
 
 class Obob {
+  static const String projectId = 'bobjobot';
   static const String blogUrl = 'https://blog.naver.com/skfoodcompany';
   static const String rssUrl = 'https://rss.blog.naver.com/skfoodcompany.xml';
   static const int maxImages = 10;
 
   final String _token;
   final List<int> _channelIds;
-  final Map<String, bool> _messageSentTracker = {};
 
   String get _todayKey => DateTime.now().toIso8601String().split('T')[0];
 
   late final NyxxGateway _bot;
-  late Future<void> _initializationDone;
+  late Future<void> _botInitializationDone;
+
+  late final DatastoreApi _datastoreApi;
+  late Future<void> _datastoreInitializationDone;
 
   Obob({
     required String token,
     required List<int> channelIds,
   })  : _token = token,
         _channelIds = channelIds {
-    _initializationDone = _initializeBot();
+    _botInitializationDone = _initializeBot();
+    _datastoreInitializationDone = _initializeDatastore();
   }
 
   Future<void> _initializeBot() async {
@@ -36,10 +42,20 @@ class Obob {
     );
   }
 
+  Future<void> _initializeDatastore() async {
+    final client = await clientViaApplicationDefaultCredentials(
+      scopes: [DatastoreApi.datastoreScope],
+    );
+    _datastoreApi = DatastoreApi(client);
+  }
+
   Future<void> activateBot() async {
-    await _initializationDone;
-    if (await _isPostFromToday() && _messageSentTracker[_todayKey] == false) {
+    await _botInitializationDone;
+    await _datastoreInitializationDone;
+
+    if (await _isPostFromToday() && !(await _checkMessageSent())) {
       await _processAndPostLunchMenu();
+      await _markMessageSent();
     }
   }
 
@@ -70,6 +86,19 @@ class Obob {
     return pubDate.year == today.year &&
         pubDate.month == today.month &&
         pubDate.day == today.day;
+  }
+
+  Future<bool> _checkMessageSent() async {
+    final key =
+        Key(path: [PathElement(kind: 'MessageSentTracker', name: _todayKey)]);
+
+    final response = await _datastoreApi.projects
+        .lookup(LookupRequest()..keys = [key], projectId);
+
+    if (response.found?.isNotEmpty == true) {
+      return true;
+    }
+    return false;
   }
 
   Future<void> _processAndPostLunchMenu() async {
@@ -143,9 +172,8 @@ class Obob {
       final textChannels = channels.whereType<GuildTextChannel>().toList();
       await Future.wait(
           textChannels.map((channel) => _sendImagesToChannel(channel, images)));
-      _messageSentTracker[_todayKey] = true;
     } catch (e) {
-      stderr.writeln('이미지 전송 중 오류 발생: $e');
+      stderr.writeln('Error sending message: $e');
     }
   }
 
@@ -156,5 +184,17 @@ class Obob {
         return AttachmentBuilder(
             data: entry.value, fileName: 'lunchmenu_${entry.key}.jpg');
       }).toList());
+  }
+
+  Future<void> _markMessageSent() async {
+    final key =
+        Key(path: [PathElement(kind: 'MessageSentTracker', name: _todayKey)]);
+
+    final entity = Entity()
+      ..key = key
+      ..properties = {'sent': Value()..booleanValue = true};
+
+    await _datastoreApi.projects.commit(
+        CommitRequest()..mutations = [Mutation()..upsert = entity], projectId);
   }
 }
