@@ -53,10 +53,11 @@ class Obob {
     await _botInitializationDone;
     await _datastoreInitializationDone;
 
-    if (!(await _isPostFromToday()) && !(await _checkMessageSent())) {
+    if (await _isPostFromToday() && !(await _checkMessageSent())) {
       await _processAndPostLunchMenu();
       await _markMessageSent();
     }
+    await _bot.close();
   }
 
   Future<bool> _isPostFromToday() async {
