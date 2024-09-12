@@ -1,5 +1,5 @@
 .dockerignore
-Dockerfile
+dockerfile
 build/
 .dart_tool/
 .git/

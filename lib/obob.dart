@@ -53,7 +53,7 @@ class Obob {
     await _botInitializationDone;
     await _datastoreInitializationDone;
 
-    if (await _isPostFromToday() && !(await _checkMessageSent())) {
+    if (!(await _isPostFromToday()) && !(await _checkMessageSent())) {
       await _processAndPostLunchMenu();
       await _markMessageSent();
     }
@@ -89,11 +89,17 @@ class Obob {
   }
 
   Future<bool> _checkMessageSent() async {
-    final key =
-        Key(path: [PathElement(kind: 'MessageSentTracker', name: _todayKey)]);
+    final key = Key(path: [
+      PathElement(
+        kind: 'MessageSentTracker',
+        name: _todayKey,
+      )
+    ]);
 
-    final response = await _datastoreApi.projects
-        .lookup(LookupRequest()..keys = [key], projectId);
+    final response = await _datastoreApi.projects.lookup(
+      LookupRequest(keys: [key]),
+      projectId,
+    );
 
     if (response.found?.isNotEmpty == true) {
       return true;
@@ -187,14 +193,27 @@ class Obob {
   }
 
   Future<void> _markMessageSent() async {
-    final key =
-        Key(path: [PathElement(kind: 'MessageSentTracker', name: _todayKey)]);
+    final key = Key(path: [
+      PathElement(
+        kind: 'MessageSentTracker',
+        name: _todayKey,
+      )
+    ]);
 
-    final entity = Entity()
-      ..key = key
-      ..properties = {'sent': Value()..booleanValue = true};
+    final entity = Entity(
+      key: key,
+      properties: {'sent': Value(booleanValue: true)},
+    );
 
-    await _datastoreApi.projects.commit(
-        CommitRequest()..mutations = [Mutation()..upsert = entity], projectId);
+    try {
+      final request = CommitRequest(
+        mode: 'NON_TRANSACTIONAL',
+        mutations: [Mutation(upsert: entity)],
+      );
+
+      await _datastoreApi.projects.commit(request, projectId);
+    } catch (e) {
+      stderr.writeln('Datastore error: $e');
+    }
   }
 }
