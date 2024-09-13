@@ -11,11 +11,11 @@ void main() async {
     return;
   }
 
-  final obob = Obob(token: token, channelIds: [1283369469275668504]);
+  final obob = Obob(token: token, channelIds: [1230352884462260286]);
 
   var handler =
       const Pipeline().addMiddleware(logRequests()).addHandler((request) async {
-    if (request.url.path == 'activate') {
+    if (request.url.path == '/activate') {
       await obob.activateBot();
       return Response.ok('봇이 활성화되었습니다.');
     } else {
