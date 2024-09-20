@@ -15,14 +15,20 @@ void main() async {
 
   var handler =
       const Pipeline().addMiddleware(logRequests()).addHandler((request) async {
-    if (request.url.path == '/activate') {
+    if (request.url.path == '' || request.url.path == '/') {
       await obob.activateBot();
-      return Response.ok('봇이 활성화되었습니다.');
+      return Response.ok(
+        '봇이 활성화되었습니다.',
+        headers: {'Content-Type': 'text/plain; charset=utf-8'},
+      );
     } else {
-      return Response.notFound('페이지를 찾을 수 없습니다.');
+      return Response.notFound(
+        '페이지를 찾을 수 없습니다.',
+        headers: {'Content-Type': 'text/plain; charset=utf-8'},
+      );
     }
   });
 
   var server = await serve(handler, '0.0.0.0', 8080);
-  stderr.writeln('서버 실행중: http://${server.address.host}:${server.port}');
+  stdout.writeln('서버 실행중: http://${server.address.host}:${server.port}');
 }
