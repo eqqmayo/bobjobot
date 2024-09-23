@@ -1,3 +1,5 @@
+![alt text](image.png)
+
 ## O-Bob
 
 **Bytes on Bites 🍚**
@@ -41,4 +43,5 @@ O-Bob은 오늘의 밥상이 궁금한 SeSAC 교육생들을 위한 점심 메�
 5. 전송 상태는 Google Datastore에 `messageSentTracker`로 저장되어 중복 전송을 방지합니다.
 
 ## Changelog
-
+- 게시물 날짜 확인 방식 변경
+- 외부 스케줄러와 DB 도입

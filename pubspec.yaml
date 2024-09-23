@@ -18,7 +18,6 @@ dependencies:
   googleapis: ^13.2.0
   shelf: ^1.4.2
   shelf_router: ^1.1.4
-  # path: ^1.8.0
 
 dev_dependencies:
   lints: ^4.0.0
