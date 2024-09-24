@@ -1,4 +1,4 @@
-![alt text](image.png)
+![alt text](assets/obob.png)
 
 ## O-Bob
 
@@ -42,6 +42,24 @@ O-Bob은 오늘의 밥상이 궁금한 SeSAC 교육생들을 위한 점심 메�
 4. 파싱된 이미지는 디스코드 채널에 전송됩니다.
 5. 전송 상태는 Google Datastore에 `messageSentTracker`로 저장되어 중복 전송을 방지합니다.
 
+
 ## Changelog
-- 게시물 날짜 확인 방식 변경
-- 외부 스케줄러와 DB 도입
+
+>**게시물 날짜 확인 방식 변경**
+
+| 항목 | 기존 방식 | 개선된 방식 |
+|------|-----------|-------------|
+| **구현 방식** | 블로그 HTML 문서 파싱 | RSS 피드 XML 문서 파싱|
+| **파싱 대상** | 1. title 태그(선택한 방식)<br>2. publishDate 태그 | pubDate 태그 |
+| **형식** | • title: "M월d일(ddd) 오늘의밥상 점심"<br>• publishDate:<br> ㅤㅤ- 1시간 이내: "n분 전"<br> ㅤㅤ- 24시간 이내: "n시간 전"<br> ㅤㅤ- 그 외: "yyyy. M. d" | 표준화된 날짜 형식 (RFC 822) |
+| **변경 이유** | • title: 작성자 실수 가능성<br>• publishDate: 복잡한 파싱 로직 | • 정확한 날짜 정보 제공<br>• 실시간 알림봇의 목적에 적합 |
+| **결과** | 날짜 작성 실수로 메뉴 알림 누락 발생 | 날짜 정보의 정확성과 신뢰성 향상 |
+| **스크린샷** | <img src="assets/html.png" alt="기존 방식" width="220"> | <img src="assets/xml.png" alt="개선된 방식" width="220"> |
+
+>**호스팅 및 외부 스케줄러와 DB 도입**
+
+| 항목 | 기존 방식 | 변경된 방식 |
+|------|-----------|-------------|
+| **호스팅** | • 로컬 개발 환경<br>• 배포를 염두에 두지 않고 개발 | • GCP(Google Cloud Platform) 선택<br>• Cloud Run 사용<br>• 비용 효율적인 서버리스 환경 구축 |
+| **데이터 관리** | • Obob 클래스 내부에서 메시지 전송 여부 추적 속성 관리 | • Google Datastore에 데이터 저장<br>• 상태 비저장 문제 해결 |
+| **스케줄링** | • Cron 라이브러리 사용<br>• 소스코드 내부에 구현 | • Google Cloud Scheduler 사용<br>• 스케줄러가 독립적으로 작동하여 서비스 트리거 |
