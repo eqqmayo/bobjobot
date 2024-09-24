@@ -42,6 +42,8 @@ O-Bob은 오늘의 밥상이 궁금한 SeSAC 교육생들을 위한 점심 메�
 4. 파싱된 이미지는 디스코드 채널에 전송됩니다.
 5. 전송 상태는 Google Datastore에 `messageSentTracker`로 저장되어 중복 전송을 방지합니다.
 
+<img width="400" alt="screenshot" src="https://github.com/user-attachments/assets/2685ae80-5fd7-4e61-8167-fb1b966912f3">
+
 
 ## Changelog
 
