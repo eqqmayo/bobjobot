@@ -54,8 +54,13 @@ class Obob {
     await _datastoreInitializationDone;
 
     if (await _isPostFromToday() && !(await _checkMessageSent())) {
-      await _processAndPostLunchMenu();
-      await _markMessageSent();
+      final bool success = await _processAndPostLunchMenu();
+      if (success) {
+        await _markMessageSent();
+        stdout.writeln('메세지 전송 성공!');
+      } else {
+        stderr.writeln('Failed to send message');
+      }
     }
     await _bot.close();
   }
@@ -108,24 +113,26 @@ class Obob {
     return false;
   }
 
-  Future<void> _processAndPostLunchMenu() async {
+  Future<bool> _processAndPostLunchMenu() async {
     try {
       final iframeElement = await _getElements(url: blogUrl, tag: 'iframe');
-      if (iframeElement == null) return;
+      if (iframeElement == null) return false;
 
       final src = iframeElement[0].attributes['src'];
       final fullSrc = Uri.parse(blogUrl).resolve(src!).toString();
       final imageElements =
           await _getElements(url: fullSrc, tag: 'img', isAll: true);
-      if (imageElements == null) return;
+      if (imageElements == null) return false;
 
       final images = await _getLunchImages(imageElements);
       if (images != null && images.isNotEmpty) {
         await _postImageToDiscord(images);
+        return true;
       }
     } catch (e) {
       stderr.writeln('Failed to process and post lunch menu: $e');
     }
+    return false;
   }
 
   Future<List<Element>?> _getElements(
